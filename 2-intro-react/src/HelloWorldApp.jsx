@@ -21,8 +21,3 @@ HelloWorldApp.propTypes = {
     user : PropTypes.object.isRequired,
     book : PropTypes.string.isRequired,
 }
-
-HelloWorldApp.defaultProps = {
-    title : 'Hello World Default',
-    book : 'UML got a gota',
-}
