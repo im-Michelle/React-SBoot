@@ -1,21 +1,94 @@
-import { getInvoice } from "./services/getInvoice";
+import { getInvoice, calculateTotal } from "./services/getInvoice";
 import { ClientView } from "./components/clientView";
 import { CompanyView } from "./components/CompanyView";
 import { InvoiceView } from "./components/InvoiceView";
 import { ListItemsView } from "./components/ListItemsView";
 import { TotalView } from "./components/TotalView";
 import { useState } from "react";
+import { useEffect } from "react";
+import { FormItemsView } from "./components/FormItemsView";
+
+const invoiceInitial = {
+    id: 0,
+    name: '',
+    client: {
+        name: '',
+        lastName: '',
+        address: {
+            country: '',
+            city: '',
+            street: '',
+            number: 0
+        },
+    },
+    company: {
+        name: '',
+        fiscalNumber: 0,
+    },
+    items: [
+
+    ]
+};
 
 export const InvoiceApp = () => {
 
-    const { total, id, name, client, company, items: itemsInitial} = getInvoice();
+    const [activeForm, setActiveForm] = useState(false);
 
-    const [productValue, setProductValue] = useState('');
-    const [priceValue, setPriceValue] = useState('');
-    const [quantityValue, setQuantityValue] = useState('');
+    const [total, setTotal] = useState(0);
 
-    const [items, setItems] = useState(itemsInitial);
-    const [counter, setCounter] = useState(4);
+    const [counter, setCounter] = useState(5);
+
+    const [invoice, setInvoice] = useState(invoiceInitial);
+
+    const [items, setItems] = useState([]);
+
+    const {id, name, client, company } = invoice;
+
+
+
+    useEffect(() => {
+        const data = getInvoice();
+        console.log(data);
+        setInvoice(data);
+        setItems(data.items);
+    }, []);
+
+
+
+    useEffect(() => {
+        console.log('El counter cambió!')
+    }, [counter]);
+
+    useEffect(() => {
+        // console.log('Los items cambiaron!')
+        setTotal(calculateTotal(items));
+    }, [items]);
+    
+
+
+    const handlerAddItems = ({product, quantity, price}) => {
+
+        setItems([...items, {
+            id:counter,
+            product: product.trim(),
+            price: +price.trim(),
+            quantity: parseInt(quantity.trim(), 10)
+        }]);
+
+        setCounter(counter +1);
+
+
+    };
+
+    const handlerDeleteItem = (id) => {
+        setItems(items.filter( item => item.id !== id));
+    };
+
+    const onActiveform = () => {
+        setActiveForm(!activeForm);
+    }
+
+    
 
     return (
         <>
@@ -35,59 +108,12 @@ export const InvoiceApp = () => {
                                 <CompanyView title="Datos de la empresa" company={company} />
                             </div>
                         </div>
-                        <ListItemsView title="Productos de la factura" items={items} />
+                        <ListItemsView title="Productos de la factura" items={items} handlerDeleteItem={ id => handlerDeleteItem(id)}/>
                         <TotalView total={total} />
-                        <form className="w-50" onSubmit={event => { event.preventDefault();
-                        if (productValue.trim().length <= 1) return;
-                        if (priceValue.trim().length <= 1) return;
-                        if (isNaN(priceValue.trim())){
-                            alert('Error el precio no es un número');
-                            return;
-                        }
-                        if (quantityValue.trim().length < 1) return;
-                        if (isNaN(quantityValue.trim())) return;
-                        setItems([...items, {
-                            key: counter,
-                            product:productValue, 
-                            price: +priceValue, 
-                            quantity: parseInt(quantityValue,10)
-                        }]);
-                        setProductValue('');
-                        setPriceValue('');
-                        setQuantityValue('');
-                        setCounter(counter+1);
-                        }}>
-                            <input
-                                type="text"
-                                name="product"
-                                value={productValue}
-                                placeholder="Product" className="form-control m-3" onChange={event => {
-                                    console.log(event.target.value);
-                                    setProductValue(event.target.value);
-                                }} />
-                            <input
-                                type="text"
-                                name="price"
-                                value={priceValue}
-                                placeholder="Price" className="form-control m-3"
-                                onChange={event => {
-                                    console.log(event.target.value);
-                                    setPriceValue(event.target.value);
-                                }} />
-                            <input
-                                type="text"
-                                name="quantity"
-                                value={quantityValue}
-                                placeholder="Quantity" className="form-control m-3"
-                                onChange={event => {
-                                    console.log(event.target.value);
-                                    setQuantityValue(event.target.value);
-                                }} />
-                                <button 
-                                type="submit" 
-                                className="btn btn-primary m-3">
-                                Create Item</button>
-                        </form>
+                        <button className="btn btn-secondary"
+                        onClick={onActiveform}>{!activeForm ? 'Agregar Item': 'Ocultar Form'}</button>
+                        {!activeForm?'': <FormItemsView handler={handlerAddItems}/>}
+                        
                     </div>
                 </div>
             </div>
